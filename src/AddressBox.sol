@@ -3,19 +3,10 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Impl.sol";
 
 interface IProxy {
     function delegatecall(address impl, bytes calldata data) external payable;
-}
-
-interface Impl {
-    function start() external;
-
-    function end(address refer) external payable;
-
-    function useFee() external view returns (uint256);
-
-    function runValue() external view returns (uint256);
 }
 
 contract AddressBox is ERC721, Ownable {
@@ -36,6 +27,15 @@ contract AddressBox is ERC721, Ownable {
 
     address immutable _thisAddress = address(this);
 
+    bytes32 immutable codehash =
+        keccak256(
+            abi.encodePacked(
+                bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
+                address(this),
+                bytes15(0x5af43d82803e903d91602b57fd5bf3)
+            )
+        );
+
     constructor() ERC721("xenbox.store", "xenbox") {}
 
     /* ================ UTIL FUNCTIONS ================ */
@@ -47,7 +47,7 @@ contract AddressBox is ERC721, Ownable {
     function _batchCreate(uint256 start, uint256 end) internal {
         bytes memory code = abi.encodePacked(
             bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
-            _thisAddress,
+            address(this),
             bytes15(0x5af43d82803e903d91602b57fd5bf3)
         );
         for (uint256 i = start; i < end; i++) {
@@ -60,12 +60,11 @@ contract AddressBox is ERC721, Ownable {
     function _batchCreateAndRun(uint256 start, uint256 end, address impl, address refer, bytes calldata data) internal {
         bytes memory code = abi.encodePacked(
             bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
-            _thisAddress,
+            address(this),
             bytes15(0x5af43d82803e903d91602b57fd5bf3)
         );
         Impl _impl = Impl(impl);
-        _impl.start();
-        uint256 runValue = _impl.runValue();
+        (uint256 runValue, uint256 useFee) = _impl.start();
         for (uint256 i = start; i < end; i++) {
             IProxy proxy;
             assembly {
@@ -73,25 +72,17 @@ contract AddressBox is ERC721, Ownable {
             }
             proxy.delegatecall{value: runValue}(impl, data);
         }
-        _impl.end{value: _impl.useFee()}(refer);
+        _impl.end{value: useFee}(refer);
     }
 
     function _batchRun(uint256 start, uint256 end, address impl, address refer, bytes calldata data) internal {
-        bytes32 _codehash = keccak256(
-            abi.encodePacked(
-                bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
-                _thisAddress,
-                bytes15(0x5af43d82803e903d91602b57fd5bf3)
-            )
-        );
         Impl _impl = Impl(impl);
-        _impl.start();
-        uint256 runValue = _impl.runValue();
+        (uint256 runValue, uint256 useFee) = _impl.start();
         for (uint256 i = start; i < end; i++) {
-            IProxy(address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), _thisAddress, i, _codehash))))))
+            IProxy(address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), i, codehash))))))
                 .delegatecall{value: runValue}(impl, data);
         }
-        _impl.end{value: _impl.useFee()}(refer);
+        _impl.end{value: useFee}(refer);
     }
 
     function delegatecall(address impl, bytes calldata data) external payable {
@@ -132,11 +123,7 @@ contract AddressBox is ERC721, Ownable {
         baseURI = __baseURI;
     }
 
-    function addImpl(address impl) external onlyOwner {
-        implMap[impl] = true;
-    }
-
-    function removeImpl(address impl) external onlyOwner {
-        implMap[impl] = false;
+    function setImpl(address impl, bool isAllow) external onlyOwner {
+        implMap[impl] = isAllow;
     }
 }

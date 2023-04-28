@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Impl.sol";
 
 interface IXen {
     function claimRank(uint256 term) external;
@@ -13,7 +14,7 @@ interface IXen {
     function transfer(address recipient, uint256 amount) external returns (bool);
 }
 
-contract XenImpl is Ownable {
+contract XenImpl is Ownable, Impl {
     uint256 public totalFee;
 
     uint256 public fee = 500;
@@ -26,18 +27,16 @@ contract XenImpl is Ownable {
 
     address immutable _thisAddress = address(this);
 
-    uint256 public useFee;
-
-    uint256 public runValue;
-
     uint256 beforeBalance;
 
     constructor() {}
 
     /* ================ UTIL FUNCTIONS ================ */
 
-    function start() external {
+    function start() external returns (uint256 runValue, uint256 usefee) {
         beforeBalance = IXen(xenAddress).balanceOf(address(this));
+        usefee = 0;
+        runValue = 0;
     }
 
     function end(address refer) external payable {
