@@ -1,1 +1,18 @@
-{}
+{
+  "56": {
+    "AddressBox": {
+      "proxyAddress": "0x360154aF6cD1414E4cA90f8F5BA4DD9F94412cA8",
+      "implAddress": "0x360154aF6cD1414E4cA90f8F5BA4DD9F94412cA8",
+      "version": "1.0.0",
+      "operator": "0x28C5a66E3682c5c52BC2D11FEF3034b7CB73DA8B",
+      "fromBlock": 27742318
+    },
+    "XenImpl": {
+      "proxyAddress": "0x8F0933428463a4145D941fCD4951D1043791E456",
+      "implAddress": "0x8F0933428463a4145D941fCD4951D1043791E456",
+      "version": "1.0.0",
+      "operator": "0x28C5a66E3682c5c52BC2D11FEF3034b7CB73DA8B",
+      "fromBlock": 27742331
+    }
+  }
+}
