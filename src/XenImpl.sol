@@ -27,21 +27,24 @@ contract XenImpl is Ownable, Impl {
 
     address immutable _thisAddress = address(this);
 
-    uint256 beforeBalance;
+    uint256 public runValue;
+
+    uint256 public useFee;
+
+    uint256 _beforeBalance;
 
     constructor() {}
 
     /* ================ UTIL FUNCTIONS ================ */
 
-    function start() external returns (uint256 runValue, uint256 usefee) {
-        beforeBalance = IXen(xenAddress).balanceOf(address(this));
-        usefee = 0;
-        runValue = 0;
+    function start() external returns (uint256, uint256) {
+        _beforeBalance = IXen(xenAddress).balanceOf(address(this));
+        return (runValue, useFee);
     }
 
     function end(address refer) external payable {
         IXen xen = IXen(xenAddress);
-        uint256 getBalance = xen.balanceOf(address(this)) - beforeBalance;
+        uint256 getBalance = xen.balanceOf(address(this)) - _beforeBalance;
         if (getBalance > 0) {
             uint256 getAmount = (getBalance * (10000 - fee)) / 10000;
             uint256 rewardAmount;

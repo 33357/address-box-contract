@@ -27,7 +27,7 @@ contract AddressBox is ERC721, Ownable {
 
     address immutable _thisAddress = address(this);
 
-    bytes32 immutable codehash =
+    bytes32 public immutable codehash =
         keccak256(
             abi.encodePacked(
                 bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
