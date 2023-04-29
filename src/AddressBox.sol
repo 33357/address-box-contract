@@ -36,8 +36,6 @@ contract AddressBox is ERC721, Ownable {
             )
         );
 
-    bool checkImpl = true;
-
     constructor() ERC721("xenbox.store", "xenbox") {}
 
     /* ================ UTIL FUNCTIONS ================ */
@@ -102,7 +100,7 @@ contract AddressBox is ERC721, Ownable {
         require(amount == 100 || amount == 50 || amount == 20 || amount == 10, "error amount");
         uint256 end = totalProxy + amount;
         if (impl != address(0)) {
-            require(checkImpl && implMap[impl], "not allow impl");
+            require(implMap[impl], "not allow impl");
             _batchCreateAndRun(totalProxy, end, impl, refer, data);
         } else {
             _batchCreate(totalProxy, end);
@@ -115,7 +113,7 @@ contract AddressBox is ERC721, Ownable {
 
     function run(uint256 tokenId, address impl, address refer, bytes calldata data) external payable {
         require(ownerOf(tokenId) == msg.sender, "not owner");
-        require(checkImpl && implMap[impl], "not allow impl");
+        require(implMap[impl], "not allow impl");
         _batchRun(tokenMap[tokenId].start, tokenMap[tokenId].end, impl, refer, data);
     }
 
@@ -127,9 +125,5 @@ contract AddressBox is ERC721, Ownable {
 
     function setImpl(address impl, bool isAllow) external onlyOwner {
         implMap[impl] = isAllow;
-    }
-
-    function setCheckImpl(bool isCheck) external onlyOwner {
-        checkImpl = isCheck;
     }
 }
