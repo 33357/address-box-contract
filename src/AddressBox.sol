@@ -36,6 +36,8 @@ contract AddressBox is ERC721, Ownable {
             )
         );
 
+    bool checkImpl = true;
+
     constructor() ERC721("xenbox.store", "xenbox") {}
 
     /* ================ UTIL FUNCTIONS ================ */
@@ -64,7 +66,8 @@ contract AddressBox is ERC721, Ownable {
             bytes15(0x5af43d82803e903d91602b57fd5bf3)
         );
         Impl _impl = Impl(impl);
-        (uint256 runValue, uint256 useFee) = _impl.start();
+        uint256 amount = end - start;
+        (uint256 runValue, uint256 useFee) = _impl.start(msg.sender, amount, refer);
         for (uint256 i = start; i < end; i++) {
             IProxy proxy;
             assembly {
@@ -72,17 +75,18 @@ contract AddressBox is ERC721, Ownable {
             }
             proxy.delegatecall{value: runValue}(impl, data);
         }
-        _impl.end{value: useFee}(refer);
+        _impl.end{value: useFee}(msg.sender, amount, refer);
     }
 
     function _batchRun(uint256 start, uint256 end, address impl, address refer, bytes calldata data) internal {
         Impl _impl = Impl(impl);
-        (uint256 runValue, uint256 useFee) = _impl.start();
+        uint256 amount = end - start;
+        (uint256 runValue, uint256 useFee) = _impl.start(msg.sender, amount, refer);
         for (uint256 i = start; i < end; i++) {
             IProxy(address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), i, codehash))))))
                 .delegatecall{value: runValue}(impl, data);
         }
-        _impl.end{value: useFee}(refer);
+        _impl.end{value: useFee}(msg.sender, amount, refer);
     }
 
     function delegatecall(address impl, bytes calldata data) external payable {
@@ -95,11 +99,10 @@ contract AddressBox is ERC721, Ownable {
     /* ================ TRAN FUNCTIONS ================ */
 
     function mint(uint256 amount, address impl, address refer, bytes calldata data) external payable {
-        require(msg.sender == tx.origin, "not user");
         require(amount == 100 || amount == 50 || amount == 20 || amount == 10, "error amount");
         uint256 end = totalProxy + amount;
         if (impl != address(0)) {
-            require(implMap[impl], "not allow impl");
+            require(checkImpl && implMap[impl], "not allow impl");
             _batchCreateAndRun(totalProxy, end, impl, refer, data);
         } else {
             _batchCreate(totalProxy, end);
@@ -111,9 +114,8 @@ contract AddressBox is ERC721, Ownable {
     }
 
     function run(uint256 tokenId, address impl, address refer, bytes calldata data) external payable {
-        require(msg.sender == tx.origin, "not user");
         require(ownerOf(tokenId) == msg.sender, "not owner");
-        require(implMap[impl], "not allow impl");
+        require(checkImpl && implMap[impl], "not allow impl");
         _batchRun(tokenMap[tokenId].start, tokenMap[tokenId].end, impl, refer, data);
     }
 
@@ -125,5 +127,9 @@ contract AddressBox is ERC721, Ownable {
 
     function setImpl(address impl, bool isAllow) external onlyOwner {
         implMap[impl] = isAllow;
+    }
+
+    function setCheckImpl(bool isCheck) external onlyOwner {
+        checkImpl = isCheck;
     }
 }
